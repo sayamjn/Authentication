@@ -2,17 +2,18 @@ var express = require('express');
 var mongoose = require("mongoose");
 var router = express.Router();
 /* GET home page. */
-var encrypt = require("mongoose-encryption");
-
-
+// var encrypt = require("mongoose-encryption");
+// var md5 = require("md5")
+var bcrypt = require("bcrypt");
+var saltRounds = 10;
 
 const userSchema = new mongoose.Schema ( {
   email: String,
   password: String
 });
 // const secret = "bhai.";
-// console.log(process.env.SECRET)
-userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields: ['password'] });
+
+// userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields: ['password'] });
 
 
 
@@ -36,13 +37,14 @@ router.get('/register', function(req, res, next) {
 
 
 router.post('/register', function(req, res, next) {
-  const newUser = new User({
+  bcrypt.hash(req.body.password,saltRounds,(err,hash)=>{
+    const newUser = new User({
     email:req.body.username,
-    password:req.body.password
+    password:hash
   });
   newUser.save((err)=>{if (err){console.log(err)}else{
     res.render('secrets');
-  }})
+  }})})
 });
 
 
@@ -51,17 +53,15 @@ router.post('/login', function(req, res, next) {
   User.findOne({email:username})
   .then((result)=>{
     if (result){
-      if (result.password === password){
-        // console.log(password)
-        res.render("secrets");
-      }
-    }
+      bcrypt.compare(password,result.password,function(err,resultt){
+        if (resultt == true){
+          res.render("secrets")
+        }
+      })
+      
+    };
   })
   .catch((err)=>{console.log(err)})
-
-  // console.log(User)
-
-  // res.render('screts');
 });
 
 
@@ -69,11 +69,6 @@ router.post('/login', function(req, res, next) {
 router.get('/logout', function(req, res, next) {
   res.render('home');
 });
-
-
-// router.get('/secrets', function(req, res, next) {
-//   res.render('secrets');
-// });
 
 
 
