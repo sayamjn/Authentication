@@ -2,11 +2,20 @@ var express = require('express');
 var mongoose = require("mongoose");
 var router = express.Router();
 /* GET home page. */
+var encrypt = require("mongoose-encryption");
 
-const userSchema = {
+
+
+const userSchema = new mongoose.Schema ( {
   email: String,
   password: String
-};
+});
+// const secret = "bhai.";
+// console.log(process.env.SECRET)
+userSchema.plugin(encrypt,{secret:process.env.SECRET,encryptedFields: ['password'] });
+
+
+
 const User = new mongoose.model("User",userSchema);
 
 
@@ -39,7 +48,16 @@ router.post('/register', function(req, res, next) {
 
 router.post('/login', function(req, res, next) {
   const {username, password} = req.body;
-  User.findOne({email:req.body.username}).then((result)=>{if (result){if (result.password === password){res.render("secrets");}}}).catch((err)=>{console.log(err)})
+  User.findOne({email:username})
+  .then((result)=>{
+    if (result){
+      if (result.password === password){
+        // console.log(password)
+        res.render("secrets");
+      }
+    }
+  })
+  .catch((err)=>{console.log(err)})
 
   // console.log(User)
 
